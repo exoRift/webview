@@ -338,9 +338,9 @@ private:
   }
 
   result<int> pump_msgloop_impl(int block) override {
-    if (m_stop_run_loop) {
-      return 0;
-    }
+    if (!m_window) return 0;
+    if (m_stop_run_loop) return 0;
+
     g_main_context_iteration(nullptr, block);
     return 1;
   }

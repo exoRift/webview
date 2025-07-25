@@ -881,6 +881,8 @@ private:
   }
 
   result<int> pump_msgloop_impl(int block) override {
+    if (!m_window) return 0;
+
     MSG msg;
     if (block) {
       if (GetMessageW(&msg, nullptr, 0, 0) < 1 /* error or WM_QUIT */) return 0; 

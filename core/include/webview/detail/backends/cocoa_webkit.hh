@@ -665,6 +665,7 @@ private:
   }
 
   result<int> pump_msgloop_impl(int block) override {
+    if (!m_window) return 0;
     if (m_should_exit) return 0;
     objc::autoreleasepool arp;
 
