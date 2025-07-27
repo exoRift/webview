@@ -558,9 +558,11 @@ private:
           DestroyWindow(hwnd);
           break;
         case WM_DESTROY:
-          w->m_window = nullptr;
-          SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
-          w->on_window_destroyed();
+          if (w->m_window == hwnd) {
+            w->m_window = nullptr;
+            SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
+            w->on_window_destroyed();
+          }
           break;
         case WM_GETMINMAXINFO: {
           auto lpmmi = (LPMINMAXINFO)lp;
@@ -647,8 +649,10 @@ private:
         w->resize_webview();
         break;
       case WM_DESTROY:
-        w->m_widget = nullptr;
-        SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
+        if (w->m_widget == hwnd) {
+          w->m_widget = nullptr;
+          SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
+        }
         break;
       default:
         return DefWindowProcW(hwnd, msg, wp, lp);
@@ -693,8 +697,10 @@ private:
         }
         break;
       case WM_DESTROY:
-        w->m_message_window = nullptr;
-        SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
+        if (w->m_message_window == hwnd) {
+          w->m_message_window = nullptr;
+          SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
+        }
         break;
       default:
         return DefWindowProcW(hwnd, msg, wp, lp);
@@ -885,11 +891,13 @@ private:
 
     MSG msg;
     if (block) {
-      if (GetMessageW(&msg, nullptr, 0, 0) < 1 /* error or WM_QUIT */) return 0; 
+      if (GetMessageW(&msg, nullptr, 0, 0) < 1) return 0; // error or WM_QUIT
+      if (msg.message == WM_QUIT && m_window) return 1;
     } else {
-      if (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE) == 0) return 1; // no message, exit early
-      if (msg.message == WM_QUIT) return 0;
+      if (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE) == 0) return 1; // no message
+      if (msg.message == WM_QUIT && m_window) return 1;
     }
+
     TranslateMessage(&msg);
     DispatchMessageW(&msg);
     return 1;
