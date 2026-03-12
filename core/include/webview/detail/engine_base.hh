@@ -221,6 +221,76 @@ protected:
       return ((s.length % 2) == 1 ? '0' : '') + s;\n\
     }).join('');\n\
   }\n\
+  var legacyGetUserMedia =\n\
+    navigator.getUserMedia ||\n\
+    navigator.webkitGetUserMedia ||\n\
+    navigator.mozGetUserMedia ||\n\
+    navigator.msGetUserMedia;\n\
+\n\
+  function makeNotSupportedError(message) {\n\
+    if (typeof DOMException === 'function') {\n\
+      return new DOMException(message, 'NotSupportedError');\n\
+    }\n\
+    var err = new Error(message);\n\
+    err.name = 'NotSupportedError';\n\
+    return err;\n\
+  }\n\
+\n\
+  if (!navigator.mediaDevices && legacyGetUserMedia) {\n\
+    var shim = {\n\
+      getUserMedia: function(constraints) {\n\
+        return new Promise(function(resolve, reject) {\n\
+          legacyGetUserMedia.call(navigator, constraints, resolve, reject);\n\
+        });\n\
+      },\n\
+      enumerateDevices: function() {\n\
+        return Promise.resolve([]);\n\
+      },\n\
+      getSupportedConstraints: function() {\n\
+        return {};\n\
+      }\n\
+    };\n\
+\n\
+    try {\n\
+      navigator.mediaDevices = shim;\n\
+    } catch (e) {\n\
+      Object.defineProperty(navigator, 'mediaDevices', {\n\
+        configurable: true,\n\
+        enumerable: true,\n\
+        value: shim,\n\
+        writable: true\n\
+      });\n\
+    }\n\
+  } else if (!navigator.mediaDevices) {\n\
+    var unsupportedShim = {\n\
+      getUserMedia: function() {\n\
+        return Promise.reject(makeNotSupportedError('getUserMedia is not supported by this runtime'));\n\
+      },\n\
+      enumerateDevices: function() {\n\
+        return Promise.resolve([]);\n\
+      },\n\
+      getSupportedConstraints: function() {\n\
+        return {};\n\
+      }\n\
+    };\n\
+    try {\n\
+      navigator.mediaDevices = unsupportedShim;\n\
+    } catch (e) {\n\
+      Object.defineProperty(navigator, 'mediaDevices', {\n\
+        configurable: true,\n\
+        enumerable: true,\n\
+        value: unsupportedShim,\n\
+        writable: true\n\
+      });\n\
+    }\n\
+  } else if (navigator.mediaDevices && !navigator.mediaDevices.getUserMedia &&\n\
+             legacyGetUserMedia) {\n\
+    navigator.mediaDevices.getUserMedia = function(constraints) {\n\
+      return new Promise(function(resolve, reject) {\n\
+        legacyGetUserMedia.call(navigator, constraints, resolve, reject);\n\
+      });\n\
+    };\n\
+  }\n\
   var Webview = (function() {\n\
     var _promises = {};\n\
     function Webview_() {}\n\

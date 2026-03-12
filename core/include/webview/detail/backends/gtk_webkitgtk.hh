@@ -201,7 +201,7 @@ protected:
 
   noresult set_html_impl(const std::string &html) override {
     webkit_web_view_load_html(WEBKIT_WEB_VIEW(m_webview), html.c_str(),
-                              nullptr);
+                              "https://localhost/");
     return {};
   }
 
@@ -291,6 +291,14 @@ private:
     // Initialize webview widget
     m_webview = webkit_web_view_new();
     g_object_ref_sink(m_webview);
+    g_signal_connect(
+      G_OBJECT(m_webview), "permission-request",
+      G_CALLBACK(+[](WebKitWebView *, WebKitPermissionRequest *request,
+               gpointer) -> gboolean {
+        webkit_permission_request_allow(request);
+        return TRUE;
+      }),
+      nullptr);
     WebKitUserContentManager *manager = m_user_content_manager =
         webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(m_webview));
     webkitgtk_compat::connect_script_message_received(
@@ -308,6 +316,7 @@ private:
   void window_settings(bool debug) {
     WebKitSettings *settings =
         webkit_web_view_get_settings(WEBKIT_WEB_VIEW(m_webview));
+    webkit_settings_set_enable_media_stream(settings, true);
     webkit_settings_set_javascript_can_access_clipboard(settings, true);
     if (debug) {
       webkit_settings_set_enable_write_console_messages_to_stdout(settings,

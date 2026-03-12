@@ -228,8 +228,9 @@ protected:
   }
   noresult set_html_impl(const std::string &html) override {
     objc::autoreleasepool arp;
-    WKWebView_loadHTMLString(m_webview, NSString_stringWithUTF8String(html),
-                             nullptr);
+    WKWebView_loadHTMLString(
+        m_webview, NSString_stringWithUTF8String(html),
+        NSURL_URLWithString(std::string{"https://localhost/"}));
     return {};
   }
   noresult eval_impl(const std::string &js) override {
@@ -513,6 +514,15 @@ private:
 
     auto preferences = WKWebViewConfiguration_get_preferences(config);
     auto yes_value = NSNumber_numberWithBool(true);
+    auto set_bool_if_supported = [](id target, const char *selector_name,
+                                    BOOL value) {
+      auto selector = objc::selector(selector_name);
+      auto supports = objc::msg_send<BOOL>(
+          target, objc::selector("respondsToSelector:"), selector);
+      if (supports) {
+        objc::msg_send<void>(target, selector, value);
+      }
+    };
 
     if (debug) {
       NSObject_setValue_forKey(
@@ -523,6 +533,14 @@ private:
     NSObject_setValue_forKey(
         preferences, yes_value,
         NSString_stringWithUTF8String("fullScreenEnabled"));
+
+    // Enable WebRTC-related features if the runtime exposes these selectors.
+    // Using selector checks avoids exceptions on runtimes where they don't
+    // exist.
+    set_bool_if_supported(preferences, "setMediaDevicesEnabled:", YES);
+    set_bool_if_supported(preferences, "_setMediaDevicesEnabled:", YES);
+    set_bool_if_supported(preferences, "setPeerConnectionEnabled:", YES);
+    set_bool_if_supported(preferences, "_setPeerConnectionEnabled:", YES);
 
 #if defined(__has_builtin)
 #if __has_builtin(__builtin_available)

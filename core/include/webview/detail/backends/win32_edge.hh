@@ -188,7 +188,9 @@ public:
          ICoreWebView2PermissionRequestedEventArgs *args) {
     COREWEBVIEW2_PERMISSION_KIND kind;
     args->get_PermissionKind(&kind);
-    if (kind == COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ) {
+    if (kind == COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ ||
+        kind == COREWEBVIEW2_PERMISSION_KIND_MICROPHONE ||
+        kind == COREWEBVIEW2_PERMISSION_KIND_CAMERA) {
       args->put_State(COREWEBVIEW2_PERMISSION_STATE_ALLOW);
     }
     return S_OK;
