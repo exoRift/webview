@@ -230,7 +230,7 @@ protected:
     objc::autoreleasepool arp;
     WKWebView_loadHTMLString(
         m_webview, NSString_stringWithUTF8String(html),
-        NSURL_URLWithString(std::string{"https://localhost/"}));
+        NSURL_URLWithString(std::string{"http://localhost/"}));
     return {};
   }
   noresult eval_impl(const std::string &js) override {

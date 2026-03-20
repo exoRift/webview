@@ -51,7 +51,7 @@ public:
 
   noresult navigate(const std::string &url) {
     if (url.empty()) {
-      return navigate_impl("about:blank");
+      return navigate_impl("http://localhost/");
     }
     return navigate_impl(url);
   }
